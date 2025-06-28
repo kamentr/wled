@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WLED Controller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind for dark mode
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <style>
+        .color-picker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 100px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        .color-picker::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+        }
+        .dark .slider {
+            background: #4b5563;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            border: none;
+        }
+        .dark .slider::-webkit-slider-thumb {
+            background: #6366f1;
+        }
+        .dark .slider::-moz-range-thumb {
+            background: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <div></div>
+                    <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">WLED Controller</h1>
+                    <button id="dark-mode-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <svg id="sun-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg id="moon-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400">Control your WLED lights with ease</p>
+                <div id="connection-status" class="mt-4">
+                    <span class="px-3 py-1 rounded-full text-sm font-medium" id="status-text">
+                        Checking connection...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Main Control Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Power and Basic Controls -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Power & Brightness</h2>
+                    
+                    <!-- Power Toggle -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Power</label>
+                        <button id="power-toggle" class="w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-lg font-medium transition-colors">
+                            Loading...
+                        </button>
+                    </div>
+
+                    <!-- Brightness Slider -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Brightness: <span id="brightness-value">128</span>
+                        </label>
+                        <input type="range" id="brightness-slider" min="0" max="255" value="128" class="slider w-full">
+                    </div>
+
+                    <!-- Quick Power Buttons -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="turn-on" class="py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                            Turn On
+                        </button>
+                        <button id="turn-off" class="py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">
+                            Turn Off
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Color Control -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Color Control</h2>
+                    
+                    <!-- Color Picker -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="color" id="color-picker" class="color-picker" value="#ff0000">
+                            <div class="flex-1">
+                                <div class="grid grid-cols-4 gap-2 text-sm">
+                                    <div>
+                                        <label class="block text-gray-600 dark:text-gray-400">R</label>
+                                        <input type="number" id="red-value" min="0" max="255" value="255" class="w-full px-2 py-1 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 dark:text-gray-400">G</label>
+                                        <input type="number" id="green-value" min="0" max="255" value="0" class="w-full px-2 py-1 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 dark:text-gray-400">B</label>
+                                        <input type="number" id="blue-value" min="0" max="255" value="0" class="w-full px-2 py-1 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 dark:text-gray-400">W</label>
+                                        <input type="number" id="white-value" min="0" max="255" value="0" class="w-full px-2 py-1 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="set-color" class="mt-4 w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">
+                            Set Color
+                        </button>
+                    </div>
+
+                    <!-- Preset Colors -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preset Colors</label>
+                        <div class="grid grid-cols-6 gap-2">
+                            <button class="preset-color w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition-transform" data-color="#ff0000"></button>
+                            <button class="preset-color w-8 h-8 rounded-full bg-green-500 hover:scale-110 transition-transform" data-color="#00ff00"></button>
+                            <button class="preset-color w-8 h-8 rounded-full bg-blue-500 hover:scale-110 transition-transform" data-color="#0000ff"></button>
+                            <button class="preset-color w-8 h-8 rounded-full bg-yellow-500 hover:scale-110 transition-transform" data-color="#ffff00"></button>
+                            <button class="preset-color w-8 h-8 rounded-full bg-purple-500 hover:scale-110 transition-transform" data-color="#800080"></button>
+                            <button class="preset-color w-8 h-8 rounded-full bg-orange-500 hover:scale-110 transition-transform" data-color="#ffa500"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Effects Control -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8 transition-colors duration-200">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Effects</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Effect Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Effect</label>
+                        
+                        <!-- Search Input -->
+                        <div class="relative mb-2">
+                            <input type="text" id="effect-search" 
+                                   placeholder="Search effects..." 
+                                   class="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white">
+                            <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- Effects Dropdown -->
+                        <div class="relative">
+                            <select id="effect-select" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white">
+                                <option value="">Loading effects...</option>
+                            </select>
+                            
+                            <!-- Effects Count -->
+                            <div id="effects-count" class="text-xs text-gray-500 dark:text-gray-400 mt-1 hidden">
+                                <span id="visible-count">0</span> of <span id="total-count">0</span> effects
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Effect Speed -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Speed: <span id="speed-value">128</span>
+                        </label>
+                        <input type="range" id="speed-slider" min="0" max="255" value="128" class="slider w-full">
+                    </div>
+
+                    <!-- Effect Intensity -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Intensity: <span id="intensity-value">128</span>
+                        </label>
+                        <input type="range" id="intensity-slider" min="0" max="255" value="128" class="slider w-full">
+                    </div>
+                </div>
+
+                <button id="set-effect" class="mt-4 py-2 px-6 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors">
+                    Apply Effect
+                </button>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="status-message" class="mt-6 hidden">
+                <div class="p-4 rounded-lg">
+                    <span id="status-text-content"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html> 

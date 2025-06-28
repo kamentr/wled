@@ -1,0 +1,16 @@
+# WLED Controller Configuration Example
+# Copy this file to .env and modify the values as needed
+
+# WLED device host (default: http://wled.local)
+# You can use mDNS hostname or IP address
+WLED_HOST=http://wled.local
+
+# Web server configuration (optional)
+HOST=127.0.0.1
+PORT=8000
+RELOAD=false
+
+# Example configurations:
+# WLED_HOST=http://192.168.1.100
+# WLED_HOST=http://my-wled-device.local
+# WLED_HOST=http://wled-esp32.local 

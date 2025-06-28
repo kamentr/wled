@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  wled-controller:
+    build: .
+    container_name: wled-controller
+    ports:
+      - "8000:8000"
+    environment:
+      - WLED_HOST=http://192.168.0.113
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=false
+    restart: unless-stopped
+    networks:
+      - wled-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  wled-network:
+    driver: bridge 
